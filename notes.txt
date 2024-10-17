@@ -1,0 +1,67 @@
+// routes/posts.js
+const express = require('express');
+const router = express.Router();
+const Post = require('../models/Post');
+const User = require('../models/User');
+
+// Fetch posts with user details
+router.get('/posts', async (req, res) => {
+  try {
+    const posts = await Post.find()
+      .populate('user', 'username profilePicture') // Populate user details
+      .sort({ createdAt: -1 }); // Optional: Sort by latest posts
+
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching posts', error });
+  }
+});
+
+module.exports = router;
+
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const Posts = () => {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get('/api/posts'); // Adjust the URL as per your setup
+        setPosts(response.data);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  return (
+    <div>
+      {posts.map((post) => (
+        <div key={post._id} className="post">
+          <div className="post-header">
+            <img
+              src={post.user.profilePicture || '/default-avatar.png'} // Fallback image
+              alt={`${post.user.username}'s profile`}
+              className="profile-picture"
+            />
+            <h4>{post.user.username}</h4>
+          </div>
+          <p>{post.content}</p>
+          {post.filePath && (
+            <img src={`/${post.filePath}`} alt="Post content" className="post-image" />
+          )}
+          <div className="post-footer">
+            <span>{new Date(post.createdAt).toLocaleString()}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default Posts;
